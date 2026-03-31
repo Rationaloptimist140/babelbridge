@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: babelbridge
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LANGBLY_API_KEY
+        sync: false
+    healthCheckPath: /
+    autoDeploy: true

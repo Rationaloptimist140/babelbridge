@@ -3,437 +3,193 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BabelBridge — Speak your language. They hear theirs.</title>
+  <title>BabelBridge — Connect across languages</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg-primary: #0d1117;
-      --bg-secondary: #161b22;
-      --bg-card: #1c2128;
-      --accent: #4f98a3;
-      --accent-hover: #3a7a85;
-      --accent-light: rgba(79,152,163,0.15);
-      --text-primary: #e6edf3;
-      --text-secondary: #8b949e;
-      --text-muted: #484f58;
-      --bubble-own: linear-gradient(135deg, #4f98a3, #3a7a85);
-      --bubble-other: #1c2128;
-      --border: #30363d;
-      --success: #3fb950;
-      --warning: #d29922;
-      --radius-sm: 8px;
-      --radius-md: 12px;
-      --radius-lg: 20px;
-      --radius-pill: 50px;
+      --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-card: #1c2128;
+      --accent: #4f98a3; --accent-hover: #3a7a85; --accent-light: rgba(79,152,163,0.15);
+      --text-primary: #e6edf3; --text-secondary: #8b949e; --text-muted: #484f58;
+      --bubble-own: linear-gradient(135deg,#4f98a3,#3a7a85); --bubble-other: #1c2128;
+      --border: #30363d; --success: #3fb950; --warning: #d29922;
+      --radius-sm: 8px; --radius-md: 12px; --radius-lg: 20px; --radius-pill: 50px;
     }
-
     body.light {
-      --bg-primary: #ffffff;
-      --bg-secondary: #f6f8fa;
-      --bg-card: #ffffff;
-      --accent: #0969da;
-      --accent-hover: #0550ae;
-      --accent-light: rgba(9,105,218,0.1);
-      --text-primary: #1f2328;
-      --text-secondary: #656d76;
-      --text-muted: #999;
-      --bubble-own: linear-gradient(135deg, #0969da, #0550ae);
-      --bubble-other: #f6f8fa;
-      --border: #d0d7de;
+      --bg-primary:#fff; --bg-secondary:#f6f8fa; --bg-card:#fff;
+      --accent:#0969da; --accent-hover:#0550ae; --accent-light:rgba(9,105,218,0.1);
+      --text-primary:#1f2328; --text-secondary:#656d76; --text-muted:#999;
+      --bubble-own:linear-gradient(135deg,#0969da,#0550ae); --bubble-other:#f6f8fa; --border:#d0d7de;
     }
+    body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg-primary); color:var(--text-primary); min-height:100vh; transition:background .2s,color .2s; }
 
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      min-height: 100vh;
-      transition: background 0.2s, color 0.2s;
-    }
+    /* TOPBAR */
+    .topbar { position:fixed;top:0;left:0;right:0;height:56px;background:var(--bg-primary);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:100;backdrop-filter:blur(10px); }
+    .logo { display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px;color:var(--text-primary); }
+    .logo svg { color:var(--accent); }
+    .topbar-right { display:flex;align-items:center;gap:8px; }
+    .btn-icon { background:none;border:1px solid var(--border);color:var(--text-secondary);border-radius:var(--radius-sm);width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s; }
+    .btn-icon:hover { background:var(--accent-light);color:var(--accent);border-color:var(--accent); }
+    .online-count-badge { background:var(--accent-light);color:var(--accent);border:1px solid var(--accent);font-size:12px;font-weight:700;padding:3px 10px;border-radius:var(--radius-pill); }
 
-    /* ===== TOPBAR ===== */
-    .topbar {
-      position: fixed; top: 0; left: 0; right: 0;
-      height: 56px;
-      background: var(--bg-primary);
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 24px;
-      z-index: 100;
-      backdrop-filter: blur(10px);
-    }
-    .logo {
-      display: flex; align-items: center; gap: 10px;
-      font-weight: 700; font-size: 18px;
-      color: var(--text-primary);
-    }
-    .logo svg { color: var(--accent); }
-    .btn-icon {
-      background: none; border: 1px solid var(--border);
-      color: var(--text-secondary); border-radius: var(--radius-sm);
-      width: 36px; height: 36px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.15s;
-    }
-    .btn-icon:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    /* SCREENS */
+    .screen { display:none; }
+    .screen.active { display:flex; }
 
-    /* ===== LANDING ===== */
-    #screen-landing {
-      min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 80px 24px 40px;
-    }
-    .hero { text-align: center; max-width: 560px; margin-bottom: 36px; }
-    .badge-pill {
-      display: inline-block;
-      background: var(--accent-light);
-      color: var(--accent);
-      font-size: 13px; font-weight: 600;
-      padding: 5px 14px;
-      border-radius: var(--radius-pill);
-      margin-bottom: 20px;
-      border: 1px solid var(--accent);
-    }
-    .hero h1 {
-      font-size: clamp(32px, 6vw, 52px);
-      font-weight: 700; line-height: 1.15;
-      margin-bottom: 20px;
-    }
-    .hero h1 span { color: var(--accent); }
-    .hero blockquote {
-      border-left: 3px solid var(--accent);
-      padding: 12px 16px;
-      margin: 0 auto;
-      text-align: left;
-      background: var(--accent-light);
-      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-      font-size: 14px; line-height: 1.6; color: var(--text-secondary);
-    }
-    .hero blockquote cite { display: block; margin-top: 8px; font-style: normal; font-size: 12px; color: var(--text-muted); }
+    /* ── ONBOARDING SCREEN ── */
+    #screen-onboard { min-height:100vh;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px 40px; }
+    .hero { text-align:center;max-width:560px;margin-bottom:32px; }
+    .badge-pill { display:inline-block;background:var(--accent-light);color:var(--accent);font-size:13px;font-weight:600;padding:5px 14px;border-radius:var(--radius-pill);margin-bottom:18px;border:1px solid var(--accent); }
+    .hero h1 { font-size:clamp(30px,6vw,50px);font-weight:700;line-height:1.15;margin-bottom:12px; }
+    .hero h1 span { color:var(--accent); }
+    .hero p { color:var(--text-secondary);font-size:16px;line-height:1.6; }
+    .form-card { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;width:100%;max-width:440px; }
+    .form-card h3 { font-size:16px;font-weight:700;margin-bottom:20px;color:var(--text-primary); }
+    .form-group { margin-bottom:14px; }
+    .form-group label { display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em; }
+    .form-group input,.form-group select,.form-group textarea { width:100%;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-primary);padding:10px 14px;border-radius:var(--radius-md);font-family:inherit;font-size:15px;outline:none;transition:border-color .15s;resize:none; }
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus { border-color:var(--accent); }
+    .form-group select option { background:var(--bg-card); }
+    .btn-primary { width:100%;background:var(--accent);color:#fff;border:none;padding:13px 20px;border-radius:var(--radius-pill);font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;transition:background .15s,transform .1s; }
+    .btn-primary:hover { background:var(--accent-hover); }
+    .btn-primary:active { transform:scale(.98); }
+    .form-footer-note { text-align:center;margin-top:12px;font-size:12px;color:var(--text-muted); }
 
-    .form-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 28px;
-      width: 100%; max-width: 440px;
-    }
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
-    .form-group input, .form-group select {
-      width: 100%;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      color: var(--text-primary);
-      padding: 10px 14px;
-      border-radius: var(--radius-md);
-      font-family: inherit; font-size: 15px;
-      outline: none; transition: border-color 0.15s;
-    }
-    .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
-    .form-group select option { background: var(--bg-card); }
+    /* ── LOBBY SCREEN ── */
+    #screen-lobby { flex-direction:column;min-height:100vh;padding-top:56px; }
+    .lobby-header { padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px; }
+    .lobby-header h2 { font-size:20px;font-weight:700; }
+    .lobby-header p { color:var(--text-secondary);font-size:14px; }
+    .btn-secondary { background:none;border:1px solid var(--border);color:var(--text-primary);padding:8px 16px;border-radius:var(--radius-pill);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s; }
+    .btn-secondary:hover { border-color:var(--accent);color:var(--accent); }
 
-    .btn-primary {
-      width: 100%;
-      background: var(--accent);
-      color: #fff; border: none;
-      padding: 12px 20px;
-      border-radius: var(--radius-pill);
-      font-family: inherit; font-size: 16px; font-weight: 700;
-      cursor: pointer; transition: background 0.15s, transform 0.1s;
-    }
-    .btn-primary:hover { background: var(--accent-hover); }
-    .btn-primary:active { transform: scale(0.98); }
+    .lobby-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:20px; }
+    .lobby-empty { text-align:center;padding:60px 20px;color:var(--text-secondary); }
+    .lobby-empty .big-emoji { font-size:56px;margin-bottom:16px; }
+    .lobby-empty h3 { font-size:18px;font-weight:600;margin-bottom:8px; }
+    .lobby-empty p { font-size:14px;color:var(--text-muted); }
 
-    .form-footer-note {
-      text-align: center; margin-top: 14px;
-      font-size: 12px; color: var(--text-muted);
-    }
+    .user-card { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;transition:border-color .15s,transform .15s;position:relative; }
+    .user-card:hover { border-color:var(--accent);transform:translateY(-2px); }
+    .user-card.is-me { border-color:var(--accent);background:var(--accent-light); }
+    .user-card-top { display:flex;align-items:center;gap:12px;margin-bottom:12px; }
+    .user-flag { font-size:36px;line-height:1; }
+    .user-info h4 { font-size:16px;font-weight:700; }
+    .user-info span { font-size:13px;color:var(--text-secondary); }
+    .user-topic { font-size:14px;color:var(--text-secondary);line-height:1.5;margin-bottom:16px;min-height:40px; }
+    .user-card-footer { display:flex;align-items:center;justify-content:space-between; }
+    .online-pill { display:flex;align-items:center;gap:5px;font-size:12px;color:var(--success);font-weight:600; }
+    .online-pill span { width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block; }
+    .btn-chat { background:var(--accent);color:#fff;border:none;padding:8px 18px;border-radius:var(--radius-pill);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s; }
+    .btn-chat:hover { background:var(--accent-hover); }
+    .me-badge { position:absolute;top:12px;right:12px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:var(--radius-pill); }
 
-    /* ===== CHAT SCREEN ===== */
-    #screen-chat {
-      display: none;
-      flex-direction: column;
-      height: 100vh;
-    }
-    #screen-chat.active { display: flex; }
+    /* Invite notification */
+    .invite-toast { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg-card);border:1px solid var(--accent);border-radius:var(--radius-lg);padding:16px 20px;z-index:999;display:none;flex-direction:column;gap:10px;min-width:300px;box-shadow:0 8px 32px rgba(0,0,0,.4); }
+    .invite-toast.show { display:flex; }
+    .invite-toast p { font-size:14px;font-weight:600; }
+    .invite-toast-btns { display:flex;gap:8px; }
+    .btn-accept { flex:1;background:var(--accent);color:#fff;border:none;padding:8px;border-radius:var(--radius-md);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer; }
+    .btn-decline { flex:1;background:none;border:1px solid var(--border);color:var(--text-secondary);padding:8px;border-radius:var(--radius-md);font-family:inherit;font-size:14px;cursor:pointer; }
 
-    .chat-header {
-      position: fixed; top: 0; left: 0; right: 0;
-      height: 56px;
-      background: var(--bg-primary);
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 16px;
-      z-index: 100;
-      backdrop-filter: blur(10px);
-    }
-    .chat-header-left { display: flex; align-items: center; gap: 10px; }
-    .room-code-pill {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-pill);
-      padding: 4px 12px;
-      font-family: monospace; font-size: 14px; font-weight: 700;
-      cursor: pointer; color: var(--accent);
-      transition: all 0.15s;
-    }
-    .room-code-pill:hover { background: var(--accent-light); }
-    .status-dot {
-      width: 10px; height: 10px; border-radius: 50%;
-      background: var(--success);
-    }
-    .status-dot.reconnecting { background: var(--warning); }
-    .chat-header-right { display: flex; align-items: center; gap: 8px; }
-    .user-count-badge {
-      background: var(--accent-light); color: var(--accent);
-      border: 1px solid var(--accent);
-      font-size: 13px; font-weight: 600;
-      padding: 3px 10px; border-radius: var(--radius-pill);
-    }
-    .btn-invite {
-      display: flex; align-items: center; gap: 5px;
-      background: var(--accent-light); border: 1px solid var(--accent);
-      color: var(--accent); border-radius: var(--radius-pill);
-      padding: 4px 12px; font-family: inherit; font-size: 13px; font-weight: 600;
-      cursor: pointer; transition: all 0.15s; white-space: nowrap;
-    }
-    .btn-invite:hover { background: var(--accent); color: #fff; }
-    .btn-leave {
-      background: rgba(255,80,80,0.12); border: 1px solid rgba(255,80,80,0.3);
-      color: #ff5050; border-radius: var(--radius-sm);
-      padding: 5px 12px; font-family: inherit; font-size: 13px; font-weight: 600;
-      cursor: pointer; transition: all 0.15s;
-    }
-    .btn-leave:hover { background: rgba(255,80,80,0.25); }
-
-    .chat-body {
-      display: flex; flex: 1;
-      margin-top: 56px; margin-bottom: 72px;
-      overflow: hidden;
-    }
-
-    /* SIDEBAR */
-    .sidebar {
-      width: 260px; flex-shrink: 0;
-      background: var(--bg-secondary);
-      border-right: 1px solid var(--border);
-      overflow-y: auto;
-      transition: transform 0.25s;
-    }
-    .sidebar-title {
-      padding: 16px;
-      font-size: 12px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--text-muted);
-      border-bottom: 1px solid var(--border);
-    }
-    .user-card {
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      transition: background 0.1s;
-    }
-    .user-card.me { border-left: 3px solid var(--accent); }
-    .user-card-flag { font-size: 24px; }
-    .user-card-info { flex: 1; min-width: 0; }
-    .user-card-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .user-card-lang { font-size: 12px; color: var(--text-muted); }
-    .online-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
-
-    /* CHAT AREA */
-    .chat-area {
-      flex: 1; overflow-y: auto;
-      display: flex; flex-direction: column;
-      padding: 16px;
-      gap: 8px;
-      scroll-behavior: smooth;
-    }
-
-    /* EMPTY STATE */
-    .empty-state {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      text-align: center; padding: 40px;
-      color: var(--text-secondary);
-    }
-    .empty-state .globe { font-size: 64px; margin-bottom: 16px; }
-    .empty-state h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
-    .empty-state p { font-size: 14px; color: var(--text-muted); }
-
-    /* MESSAGE BUBBLES */
-    .msg-row {
-      display: flex;
-      flex-direction: column;
-    }
-    .msg-row.own { align-items: flex-end; }
-    .msg-row.other { align-items: flex-start; }
-    .msg-row.system { align-items: center; }
-
-    .msg-meta {
-      display: flex; align-items: center; gap: 6px;
-      margin-bottom: 4px;
-      font-size: 12px; color: var(--text-muted);
-    }
-    .msg-bubble {
-      max-width: 65%;
-      padding: 10px 14px;
-      position: relative;
-      word-break: break-word;
-      font-size: 15px; line-height: 1.5;
-    }
-    .msg-row.own .msg-bubble {
-      background: var(--bubble-own);
-      color: #fff;
-      border-radius: 20px 20px 4px 20px;
-    }
-    .msg-row.other .msg-bubble {
-      background: var(--bubble-other);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
-      border-radius: 20px 20px 20px 4px;
-    }
-    .msg-bottom {
-      display: flex; align-items: center; gap: 8px;
-      margin-top: 5px; flex-wrap: wrap;
-    }
-    .translated-pill {
-      font-size: 11px; color: var(--text-muted);
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      padding: 2px 8px; border-radius: var(--radius-pill);
-    }
-    .msg-time { font-size: 11px; color: var(--text-muted); }
-
-    .system-msg {
-      text-align: center; font-size: 13px;
-      color: var(--text-muted); padding: 6px 0;
-    }
-
-    /* TOOLTIP */
-    .msg-bubble[data-original] { cursor: default; }
-    .tooltip {
-      position: fixed;
-      background: #000;
-      color: #fff;
-      font-size: 12px;
-      padding: 6px 10px;
-      border-radius: var(--radius-sm);
-      pointer-events: none;
-      z-index: 9999;
-      max-width: 280px;
-      word-break: break-word;
-      opacity: 0;
-      transition: opacity 0.15s;
-    }
-    .tooltip.show { opacity: 1; }
-
-    /* TYPING INDICATOR */
-    #typing-indicator {
-      padding: 4px 16px;
-      font-size: 13px; color: var(--text-muted);
-      min-height: 22px;
-    }
-    .dots span {
-      display: inline-block; width: 5px; height: 5px;
-      background: var(--text-muted); border-radius: 50%; margin: 0 1px;
-      animation: bounce 1.2s infinite;
-    }
-    .dots span:nth-child(2) { animation-delay: 0.2s; }
-    .dots span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes bounce {
-      0%, 80%, 100% { transform: translateY(0); }
-      40% { transform: translateY(-5px); }
-    }
-
-    /* FOOTER */
-    .chat-footer {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--bg-primary);
-      border-top: 1px solid var(--border);
-      padding: 10px 16px;
-      display: flex; align-items: flex-end; gap: 10px;
-      z-index: 100;
-    }
-    .my-flag { font-size: 24px; line-height: 1; padding-bottom: 4px; }
-    #msg-input {
-      flex: 1;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      color: var(--text-primary);
-      border-radius: var(--radius-lg);
-      padding: 10px 16px;
-      font-family: inherit; font-size: 15px;
-      resize: none; outline: none;
-      max-height: 100px; overflow-y: auto;
-      transition: border-color 0.15s;
-      line-height: 1.5;
-    }
-    #msg-input:focus { border-color: var(--accent); }
-    #btn-send {
-      background: var(--accent); border: none;
-      color: #fff; border-radius: 50%;
-      width: 40px; height: 40px; flex-shrink: 0;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: background 0.15s, transform 0.1s;
-    }
-    #btn-send:hover { background: var(--accent-hover); }
-    #btn-send:active { transform: scale(0.9); }
-
-    /* MOBILE */
-    @media (max-width: 768px) {
-      .sidebar {
-        position: fixed; top: 56px; bottom: 72px; left: 0; z-index: 50;
-        transform: translateX(-100%);
-      }
-      .sidebar.open { transform: translateX(0); }
-      .msg-bubble { max-width: 85%; }
-    }
+    /* ── CHAT SCREEN ── */
+    #screen-chat { flex-direction:column;height:100vh; }
+    .chat-header { position:fixed;top:0;left:0;right:0;height:56px;background:var(--bg-primary);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:100;backdrop-filter:blur(10px); }
+    .chat-header-left { display:flex;align-items:center;gap:10px; }
+    .room-code-pill { background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-pill);padding:4px 12px;font-family:monospace;font-size:13px;font-weight:700;cursor:pointer;color:var(--accent);transition:all .15s; }
+    .room-code-pill:hover { background:var(--accent-light); }
+    .status-dot { width:10px;height:10px;border-radius:50%;background:var(--success); }
+    .status-dot.reconnecting { background:var(--warning); }
+    .chat-header-right { display:flex;align-items:center;gap:8px; }
+    .user-count-badge { background:var(--accent-light);color:var(--accent);border:1px solid var(--accent);font-size:13px;font-weight:600;padding:3px 10px;border-radius:var(--radius-pill); }
+    .btn-invite { display:flex;align-items:center;gap:5px;background:var(--accent-light);border:1px solid var(--accent);color:var(--accent);border-radius:var(--radius-pill);padding:4px 12px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap; }
+    .btn-invite:hover { background:var(--accent);color:#fff; }
+    .btn-leave { background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);color:#ff5050;border-radius:var(--radius-sm);padding:5px 12px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s; }
+    .btn-leave:hover { background:rgba(255,80,80,.25); }
+    .chat-body { display:flex;flex:1;margin-top:56px;margin-bottom:72px;overflow:hidden; }
+    .sidebar { width:240px;flex-shrink:0;background:var(--bg-secondary);border-right:1px solid var(--border);overflow-y:auto;transition:transform .25s; }
+    @media(max-width:600px){ .sidebar{position:fixed;left:0;top:56px;bottom:72px;transform:translateX(-100%);z-index:50;} .sidebar.open{transform:translateX(0);} }
+    .sidebar-title { padding:14px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);border-bottom:1px solid var(--border); }
+    .sb-user { display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border); }
+    .sb-user.me { border-left:3px solid var(--accent); }
+    .sb-flag { font-size:22px; }
+    .sb-info { flex:1;min-width:0; }
+    .sb-name { font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .sb-lang { font-size:11px;color:var(--text-muted); }
+    .sb-dot { width:7px;height:7px;border-radius:50%;background:var(--success);flex-shrink:0; }
+    .chat-area { flex:1;overflow-y:auto;display:flex;flex-direction:column;padding:16px;gap:8px;scroll-behavior:smooth; }
+    .empty-state { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;color:var(--text-secondary); }
+    .empty-state .globe { font-size:60px;margin-bottom:14px; }
+    .empty-state h3 { font-size:17px;font-weight:600;margin-bottom:6px; }
+    .empty-state p { font-size:13px;color:var(--text-muted); }
+    .msg-row { display:flex;flex-direction:column; }
+    .msg-row.own { align-items:flex-end; }
+    .msg-row.other { align-items:flex-start; }
+    .msg-row.system { align-items:center; }
+    .msg-meta { display:flex;align-items:center;gap:5px;margin-bottom:3px;font-size:11px;color:var(--text-muted); }
+    .msg-bubble { max-width:65%;padding:10px 14px;word-break:break-word;font-size:15px;line-height:1.5; }
+    .msg-row.own .msg-bubble { background:var(--bubble-own);color:#fff;border-radius:20px 20px 4px 20px; }
+    .msg-row.other .msg-bubble { background:var(--bubble-other);color:var(--text-primary);border:1px solid var(--border);border-radius:20px 20px 20px 4px; }
+    .msg-bottom { display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap; }
+    .translated-pill { font-size:11px;color:var(--accent);background:var(--accent-light);border:1px solid var(--accent);padding:2px 8px;border-radius:var(--radius-pill); }
+    .msg-time { font-size:11px;color:var(--text-muted); }
+    .system-msg { font-size:12px;color:var(--text-muted);background:var(--bg-secondary);border:1px solid var(--border);padding:4px 14px;border-radius:var(--radius-pill); }
+    .typing-bar { padding:6px 16px;font-size:12px;color:var(--text-muted);min-height:24px; }
+    .chat-footer { position:fixed;bottom:0;left:0;right:0;height:72px;background:var(--bg-primary);border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 16px; }
+    .my-flag { font-size:22px; }
+    textarea#msg-input { flex:1;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-primary);padding:10px 14px;border-radius:var(--radius-lg);font-family:inherit;font-size:15px;outline:none;resize:none;max-height:100px;transition:border-color .15s;line-height:1.4; }
+    textarea#msg-input:focus { border-color:var(--accent); }
+    #btn-send { width:44px;height:44px;border-radius:50%;background:var(--accent);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s; }
+    #btn-send:hover { background:var(--accent-hover); }
+    .tooltip { position:fixed;background:var(--bg-card);border:1px solid var(--border);padding:6px 10px;border-radius:var(--radius-sm);font-size:12px;pointer-events:none;z-index:999;opacity:0;transition:opacity .15s;max-width:260px; }
+    .tooltip.show { opacity:1; }
   </style>
 </head>
 <body>
 
-<!-- TOOLTIP -->
 <div class="tooltip" id="tooltip"></div>
 
-<!-- ===== LANDING SCREEN ===== -->
-<div id="screen-landing">
-  <div class="topbar">
-    <div class="logo">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <rect x="2" y="2" width="16" height="13" rx="4" fill="currentColor" opacity="0.9"/>
-        <rect x="10" y="9" width="16" height="13" rx="4" fill="currentColor" opacity="0.6"/>
-        <polygon points="5,15 5,20 10,15" fill="currentColor" opacity="0.9"/>
-      </svg>
-      BabelBridge
-    </div>
-    <button class="btn-icon" id="theme-toggle-landing" title="Toggle theme">
-      <svg id="theme-icon-landing" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+      <rect x="2" y="2" width="16" height="13" rx="4" fill="currentColor" opacity=".9"/>
+      <rect x="10" y="9" width="16" height="13" rx="4" fill="currentColor" opacity=".6"/>
+      <polygon points="5,15 5,20 10,15" fill="currentColor" opacity=".9"/>
+    </svg>
+    BabelBridge
+  </div>
+  <div class="topbar-right">
+    <span class="online-count-badge" id="global-online">0 online</span>
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme">
+      <svg id="theme-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
       </svg>
     </button>
   </div>
+</div>
 
+<!-- ═══════════════════════════════════════════════════
+     ONBOARDING SCREEN
+════════════════════════════════════════════════════ -->
+<div id="screen-onboard" class="screen active">
   <div class="hero">
-    <div class="badge-pill">🌐 Real-time • 30 Languages • Free</div>
+    <div class="badge-pill">🌐 Real-time • 30 Languages • No signup</div>
     <h1>Speak your language.<br><span>They hear theirs.</span></h1>
-    <blockquote>
-      "When translation removes language barriers, the world shifts from
-      nation vs nation — to common sense vs nonsense."
-      <cite>— @yoyonofukuoka, 28.5M views</cite>
-    </blockquote>
+    <p>Join the lobby, find someone to chat with, and start talking — translated instantly into each other's language.</p>
   </div>
 
   <div class="form-card">
+    <h3>👋 Who are you?</h3>
     <div class="form-group">
-      <label for="input-name">Your name</label>
-      <input type="text" id="input-name" placeholder="Enter your name" required autocomplete="off" />
+      <label>Your name</label>
+      <input type="text" id="input-name" placeholder="Enter your name" autocomplete="off" />
     </div>
     <div class="form-group">
-      <label for="select-language">I speak:</label>
+      <label>I speak</label>
       <select id="select-language">
         <option value="en" data-flag="🇬🇧">🇬🇧 English</option>
         <option value="ja" data-flag="🇯🇵">🇯🇵 Japanese</option>
@@ -444,7 +200,7 @@
         <option value="fr" data-flag="🇫🇷">🇫🇷 French</option>
         <option value="de" data-flag="🇩🇪">🇩🇪 German</option>
         <option value="pt" data-flag="🇧🇷">🇧🇷 Portuguese</option>
-        <option value="zh" data-flag="🇨🇳">🇨🇳 Chinese Simplified</option>
+        <option value="zh" data-flag="🇨🇳">🇨🇳 Chinese</option>
         <option value="ko" data-flag="🇰🇷">🇰🇷 Korean</option>
         <option value="ru" data-flag="🇷🇺">🇷🇺 Russian</option>
         <option value="tr" data-flag="🇹🇷">🇹🇷 Turkish</option>
@@ -468,46 +224,77 @@
       </select>
     </div>
     <div class="form-group">
-      <label for="input-room">Room code <span style="color:var(--text-muted);font-weight:400">(leave blank to create new)</span></label>
-      <input type="text" id="input-room" placeholder="e.g. ABC123" maxlength="6" autocomplete="off" style="text-transform:uppercase;letter-spacing:0.1em" />
+      <label>What do you want to talk about? <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+      <input type="text" id="input-topic" placeholder="e.g. Football, travel, just chatting..." autocomplete="off" />
     </div>
-    <button class="btn-primary" id="btn-join">Enter Room →</button>
-    <p class="form-footer-note">No account needed • Rooms are temporary • Works on mobile</p>
+    <div class="form-group" id="room-field-group">
+      <label>Have a room code? <span style="color:var(--text-muted);font-weight:400">(leave blank to join lobby)</span></label>
+      <input type="text" id="input-room" placeholder="e.g. ABC123" maxlength="6" autocomplete="off" style="text-transform:uppercase;letter-spacing:.1em" />
+    </div>
+    <button class="btn-primary" id="btn-enter">Enter BabelBridge →</button>
+    <p class="form-footer-note">No account needed • Free • Works on mobile</p>
   </div>
 </div>
 
-<!-- ===== CHAT SCREEN ===== -->
-<div id="screen-chat">
+<!-- ═══════════════════════════════════════════════════
+     LOBBY SCREEN
+════════════════════════════════════════════════════ -->
+<div id="screen-lobby" class="screen">
+  <div class="lobby-header">
+    <div>
+      <h2>🌐 Language Lobby</h2>
+      <p>Find someone to chat with — click Chat to start a translated conversation</p>
+    </div>
+    <button class="btn-secondary" id="btn-leave-lobby">← Leave lobby</button>
+  </div>
+  <div class="lobby-grid" id="lobby-grid">
+    <div class="lobby-empty" id="lobby-empty">
+      <div class="big-emoji">👋</div>
+      <h3>You're the first one here!</h3>
+      <p>Share the link and invite someone to join you.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Invite toast -->
+<div class="invite-toast" id="invite-toast">
+  <p id="invite-toast-msg">Someone wants to chat with you!</p>
+  <div class="invite-toast-btns">
+    <button class="btn-accept" id="btn-accept-invite">✓ Accept</button>
+    <button class="btn-decline" id="btn-decline-invite">✕ Decline</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     CHAT SCREEN
+════════════════════════════════════════════════════ -->
+<div id="screen-chat" class="screen">
   <div class="chat-header">
     <div class="chat-header-left">
       <div class="logo" style="font-size:15px">
-        <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-          <rect x="2" y="2" width="16" height="13" rx="4" fill="currentColor" opacity="0.9"/>
-          <rect x="10" y="9" width="16" height="13" rx="4" fill="currentColor" opacity="0.6"/>
-          <polygon points="5,15 5,20 10,15" fill="currentColor" opacity="0.9"/>
+        <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
+          <rect x="2" y="2" width="16" height="13" rx="4" fill="currentColor" opacity=".9"/>
+          <rect x="10" y="9" width="16" height="13" rx="4" fill="currentColor" opacity=".6"/>
+          <polygon points="5,15 5,20 10,15" fill="currentColor" opacity=".9"/>
         </svg>
         BabelBridge
       </div>
-      <span class="room-code-pill" id="room-code-display" title="Click to copy room code">——</span>
-      <button class="btn-invite" id="btn-invite-link" title="Copy invite link">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        Invite Link
-      </button>
+      <span class="room-code-pill" id="room-code-display" title="Click to copy">——</span>
     </div>
     <div class="status-dot" id="status-dot"></div>
     <div class="chat-header-right">
       <span class="user-count-badge" id="user-count-badge">1 online</span>
+      <button class="btn-invite" id="btn-invite-link">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Invite
+      </button>
       <button class="btn-icon" id="btn-toggle-sidebar" title="Toggle sidebar">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-        </svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-      <button class="btn-icon" id="theme-toggle-chat" title="Toggle theme">
-        <svg id="theme-icon-chat" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-        </svg>
+      <button class="btn-icon" id="theme-toggle-chat">
+        <svg id="theme-icon-chat" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
-      <button class="btn-leave" id="btn-leave">Leave</button>
+      <button class="btn-leave" id="btn-leave-chat">Leave</button>
     </div>
   </div>
 
@@ -520,22 +307,19 @@
       <div class="chat-area" id="chat-area">
         <div class="empty-state" id="empty-state">
           <div class="globe">🌐</div>
-          <h3>Room is ready. Say hello in your language.</h3>
-          <p>The person you're chatting with will read it in theirs.</p>
+          <h3>Room is ready. Say hello!</h3>
+          <p>Everyone reads your message in their own language.</p>
         </div>
       </div>
-      <div id="typing-indicator"></div>
+      <div class="typing-bar" id="typing-indicator"></div>
     </div>
   </div>
 
   <div class="chat-footer">
     <span class="my-flag" id="my-flag-display">🌐</span>
-    <textarea id="msg-input" rows="1" placeholder="Type your message... Press Enter to send"></textarea>
+    <textarea id="msg-input" rows="1" placeholder="Type in your language... Press Enter to send"></textarea>
     <button id="btn-send">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <line x1="22" y1="2" x2="11" y2="13"/>
-        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-      </svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </button>
   </div>
 </div>
@@ -554,13 +338,16 @@ const LANGUAGES = {
   fa:{name:"Persian",flag:"🇮🇷"},yue:{name:"Cantonese",flag:"🇨🇳"},yo:{name:"Yoruba",flag:"🇳🇬"}
 };
 
+// State
 let socket = null;
 let myRoomId = null;
 let myLang = 'en';
 let myFlag = '🇬🇧';
 let myName = '';
-let typingTimeout = null;
+let myTopic = '';
 let hasMessages = false;
+let pendingInviteRoomId = null;
+let lobbyUsersMap = {};
 
 // Theme
 const savedTheme = localStorage.getItem('bb-theme');
@@ -572,158 +359,216 @@ function toggleTheme() {
 }
 function updateThemeIcons() {
   const isLight = document.body.classList.contains('light');
-  const sunSvg = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
-  const moonSvg = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
-  const icon = isLight ? sunSvg : moonSvg;
-  document.getElementById('theme-icon-landing').innerHTML = icon;
-  document.getElementById('theme-icon-chat').innerHTML = icon;
+  const sun = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+  const moon = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+  const svg = isLight ? sun : moon;
+  document.getElementById('theme-icon').innerHTML = svg;
+  document.getElementById('theme-icon-chat').innerHTML = svg;
 }
 updateThemeIcons();
-document.getElementById('theme-toggle-landing').addEventListener('click', toggleTheme);
+document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+document.getElementById('theme-toggle-chat').addEventListener('click', toggleTheme);
 
-// Auto-fill room code from URL (shareable link support)
+// Screen switcher
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// Auto-fill room from URL
 const urlParams = new URLSearchParams(window.location.search);
 const urlRoom = urlParams.get('room');
 if (urlRoom) {
   document.getElementById('input-room').value = urlRoom.toUpperCase();
   document.getElementById('input-name').focus();
 }
-document.getElementById('theme-toggle-chat').addEventListener('click', toggleTheme);
 
-// Auto-uppercase room input
-document.getElementById('input-room').addEventListener('input', function() {
-  this.value = this.value.toUpperCase();
-});
+// Auto-uppercase room
+document.getElementById('input-room').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
 
-// JOIN
-document.getElementById('btn-join').addEventListener('click', joinRoom);
-document.getElementById('input-name').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(); });
-document.getElementById('input-room').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(); });
+// ── ENTER ──────────────────────────────────────────────
+document.getElementById('btn-enter').addEventListener('click', enterApp);
+document.getElementById('input-name').addEventListener('keydown', e => { if (e.key === 'Enter') enterApp(); });
 
-function joinRoom() {
+function enterApp() {
   const name = document.getElementById('input-name').value.trim();
   if (!name) { document.getElementById('input-name').focus(); return; }
   const sel = document.getElementById('select-language');
-  const langCode = sel.value;
-  const flag = sel.options[sel.selectedIndex].getAttribute('data-flag');
-  const roomInput = document.getElementById('input-room').value.trim().toUpperCase();
-
-  myLang = langCode;
-  myFlag = flag;
+  myLang = sel.value;
+  myFlag = sel.options[sel.selectedIndex].getAttribute('data-flag');
   myName = name;
+  myTopic = document.getElementById('input-topic').value.trim();
+  const roomCode = document.getElementById('input-room').value.trim().toUpperCase();
 
   socket = io();
   setupSocket();
-  socket.emit('join-room', { roomId: roomInput || null, userName: name, langCode, flag });
+
+  if (roomCode) {
+    // Go straight to room
+    socket.emit('join-room', { roomId: roomCode, userName: name, langCode: myLang, flag: myFlag });
+  } else {
+    // Join lobby
+    const langName = LANGUAGES[myLang]?.name || myLang;
+    socket.emit('lobby-join', { name, langCode: myLang, flag: myFlag, langName, topic: myTopic });
+    showScreen('screen-lobby');
+  }
 }
 
+// ── SOCKET SETUP ──────────────────────────────────────
 function setupSocket() {
-  socket.on('connect', () => {
-    document.getElementById('status-dot').className = 'status-dot';
+  socket.on('connect', () => { document.getElementById('status-dot').className = 'status-dot'; });
+  socket.on('disconnect', () => { document.getElementById('status-dot').className = 'status-dot reconnecting'; });
+
+  // Lobby events
+  socket.on('lobby-state', (users) => {
+    lobbyUsersMap = {};
+    users.forEach(u => { lobbyUsersMap[u.socketId] = u; });
+    renderLobby();
+    updateGlobalOnline(users.length);
   });
-  socket.on('disconnect', () => {
-    document.getElementById('status-dot').className = 'status-dot reconnecting';
+  socket.on('lobby-user-joined', (user) => {
+    lobbyUsersMap[user.socketId] = user;
+    renderLobby();
+    updateGlobalOnline(Object.keys(lobbyUsersMap).length);
   });
-  socket.on('reconnecting', () => {
-    document.getElementById('status-dot').className = 'status-dot reconnecting';
+  socket.on('lobby-user-left', (socketId) => {
+    delete lobbyUsersMap[socketId];
+    renderLobby();
+    updateGlobalOnline(Object.keys(lobbyUsersMap).length);
+  });
+  socket.on('lobby-invited', ({ roomId, fromName, fromFlag }) => {
+    pendingInviteRoomId = roomId;
+    document.getElementById('invite-toast-msg').textContent = `${fromFlag} ${fromName} wants to chat with you!`;
+    document.getElementById('invite-toast').classList.add('show');
   });
 
+  // Room events
   socket.on('room-joined', ({ roomId, users, recentMessages }) => {
     myRoomId = roomId;
     document.getElementById('room-code-display').textContent = roomId;
     document.getElementById('my-flag-display').textContent = myFlag;
-    const langName = LANGUAGES[myLang]?.name || myLang;
-    document.getElementById('msg-input').placeholder = `Type in ${langName}... Press Enter to send`;
-
-    // Switch screens
-    document.getElementById('screen-landing').style.display = 'none';
-    document.getElementById('screen-chat').classList.add('active');
-
+    document.getElementById('msg-input').placeholder = `Type in ${LANGUAGES[myLang]?.name || 'your language'}... Press Enter to send`;
     renderUsers(users);
+    showScreen('screen-chat');
     recentMessages.forEach(msg => {
-      // recentMessages are raw stored messages, we don't have translations here
-      // just show as system context or skip — server already handles sending translated
+      appendMessage({
+        ...msg,
+        translatedText: msg.originalText,
+        isOwn: false
+      });
     });
   });
-
-  socket.on('message-received', (msg) => {
-    hideEmptyState();
-    appendMessage(msg);
-  });
-
-  socket.on('room-users', (users) => {
-    renderUsers(users);
-    document.getElementById('user-count-badge').textContent = users.length + ' online';
-  });
-
-  socket.on('user-joined', ({ userName, flag, userCount }) => {
-    appendSystemMessage(`🟢 ${flag} ${userName} joined the room`);
-    document.getElementById('user-count-badge').textContent = userCount + ' online';
-  });
-
-  socket.on('user-left', ({ userName, flag, userCount }) => {
-    appendSystemMessage(`🔴 ${flag} ${userName} left the room`);
-    document.getElementById('user-count-badge').textContent = userCount + ' online';
-  });
-
+  socket.on('room-users', renderUsers);
+  socket.on('user-joined', ({ userName, flag }) => appendSystemMessage(`${flag} ${userName} joined`));
+  socket.on('user-left', ({ userName, flag }) => appendSystemMessage(`${flag} ${userName} left`));
+  socket.on('message-received', appendMessage);
   socket.on('user-typing', ({ userName }) => {
-    const el = document.getElementById('typing-indicator');
-    el.innerHTML = `${userName} is translating... <span class="dots"><span></span><span></span><span></span></span>`;
-    clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => { el.innerHTML = ''; }, 2000);
+    document.getElementById('typing-indicator').textContent = `${userName} is typing...`;
+    clearTimeout(window._typingTimer);
+    window._typingTimer = setTimeout(() => { document.getElementById('typing-indicator').textContent = ''; }, 2000);
   });
 }
 
+function updateGlobalOnline(n) {
+  document.getElementById('global-online').textContent = n + ' online';
+}
+
+// ── LOBBY RENDER ──────────────────────────────────────
+function renderLobby() {
+  const grid = document.getElementById('lobby-grid');
+  const users = Object.values(lobbyUsersMap);
+  if (users.length === 0) {
+    grid.innerHTML = `<div class="lobby-empty" style="grid-column:1/-1"><div class="big-emoji">👋</div><h3>You're the first one here!</h3><p>Share the link below and invite someone to join you.</p><br><button class="btn-primary" style="width:auto;padding:10px 24px" onclick="copyLobbyLink()">📋 Copy invite link</button></div>`;
+    return;
+  }
+  grid.innerHTML = '';
+  users.forEach(u => {
+    const isMe = u.socketId === socket.id;
+    const card = document.createElement('div');
+    card.className = 'user-card' + (isMe ? ' is-me' : '');
+    card.innerHTML = `
+      ${isMe ? '<div class="me-badge">You</div>' : ''}
+      <div class="user-card-top">
+        <div class="user-flag">${u.flag}</div>
+        <div class="user-info">
+          <h4>${escHtml(u.name)}</h4>
+          <span>Speaks ${escHtml(u.langName)}</span>
+        </div>
+      </div>
+      <div class="user-topic">${escHtml(u.topic || 'Open to anything 😊')}</div>
+      <div class="user-card-footer">
+        <div class="online-pill"><span></span> Online now</div>
+        ${isMe ? `<button class="btn-chat" onclick="copyLobbyLink()" style="background:var(--bg-secondary);color:var(--accent);border:1px solid var(--accent)">📋 Share link</button>` : `<button class="btn-chat" onclick="inviteUser('${u.socketId}')">Chat →</button>`}
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function inviteUser(targetSocketId) {
+  socket.emit('lobby-invite', { targetSocketId });
+}
+
+function copyLobbyLink() {
+  navigator.clipboard.writeText(window.location.origin).then(() => {
+    alert('Link copied! Share it with anyone you want to chat with.');
+  });
+}
+
+// Accept/Decline invite
+document.getElementById('btn-accept-invite').addEventListener('click', () => {
+  document.getElementById('invite-toast').classList.remove('show');
+  if (pendingInviteRoomId) {
+    socket.emit('join-room', { roomId: pendingInviteRoomId, userName: myName, langCode: myLang, flag: myFlag });
+  }
+});
+document.getElementById('btn-decline-invite').addEventListener('click', () => {
+  document.getElementById('invite-toast').classList.remove('show');
+  pendingInviteRoomId = null;
+});
+
+// ── LEAVE LOBBY ───────────────────────────────────────
+document.getElementById('btn-leave-lobby').addEventListener('click', () => {
+  if (socket) { socket.emit('lobby-leave'); socket.disconnect(); }
+  showScreen('screen-onboard');
+});
+
+// ── CHAT ──────────────────────────────────────────────
 function renderUsers(users) {
   const list = document.getElementById('users-list');
   list.innerHTML = '';
+  document.getElementById('user-count-badge').textContent = users.length + ' online';
   users.forEach(u => {
-    const isMe = u.socketId === (socket && socket.id);
-    const langName = LANGUAGES[u.langCode]?.name || u.langCode;
-    const card = document.createElement('div');
-    card.className = 'user-card' + (isMe ? ' me' : '');
-    card.innerHTML = `
-      <span class="user-card-flag">${u.flag}</span>
-      <div class="user-card-info">
-        <div class="user-card-name">${escHtml(u.userName)}${isMe ? ' (you)' : ''}</div>
-        <div class="user-card-lang">${langName}</div>
-      </div>
-      <span class="online-dot"></span>
-    `;
-    list.appendChild(card);
+    const isMe = u.socketId === socket.id;
+    const div = document.createElement('div');
+    div.className = 'sb-user' + (isMe ? ' me' : '');
+    div.innerHTML = `<div class="sb-flag">${u.flag}</div><div class="sb-info"><div class="sb-name">${escHtml(u.userName)}${isMe ? ' (you)' : ''}</div><div class="sb-lang">${LANGUAGES[u.langCode]?.name || u.langCode}</div></div><div class="sb-dot"></div>`;
+    list.appendChild(div);
   });
 }
 
 function appendMessage(msg) {
+  hideEmptyState();
   const area = document.getElementById('chat-area');
   const row = document.createElement('div');
   row.className = 'msg-row ' + (msg.isOwn ? 'own' : 'other');
-
-  const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const showTranslatedPill = !msg.isOwn && msg.sourceLang && msg.sourceLang !== myLang;
-  const srcLangName = LANGUAGES[msg.sourceLang]?.name || msg.sourceLang;
-  const isDifferent = msg.translatedText !== msg.originalText;
-
+  const time = new Date(msg.timestamp).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+  const showPill = !msg.isOwn && msg.sourceLang && msg.sourceLang !== myLang;
+  const srcName = LANGUAGES[msg.sourceLang]?.name || msg.sourceLang;
+  const isDiff = msg.translatedText !== msg.originalText;
   let inner = '';
-  if (!msg.isOwn) {
-    inner += `<div class="msg-meta">${msg.senderFlag} <strong>${escHtml(msg.senderName)}</strong> <span style="color:var(--text-muted)">${srcLangName}</span></div>`;
-  }
-  inner += `<div class="msg-bubble"${isDifferent ? ` data-original="${escAttr(msg.originalText)}"` : ''}>${escHtml(msg.translatedText)}</div>`;
+  if (!msg.isOwn) inner += `<div class="msg-meta">${msg.senderFlag} <strong>${escHtml(msg.senderName)}</strong></div>`;
+  inner += `<div class="msg-bubble"${isDiff ? ` data-original="${escAttr(msg.originalText)}"` : ''}>${escHtml(msg.translatedText)}</div>`;
   inner += `<div class="msg-bottom">`;
-  if (showTranslatedPill) inner += `<span class="translated-pill">Translated from ${srcLangName}</span>`;
+  if (showPill) inner += `<span class="translated-pill">Translated from ${srcName}</span>`;
   inner += `<span class="msg-time">${time}</span></div>`;
-
   row.innerHTML = inner;
   area.appendChild(row);
-
-  // Tooltip on hover
   const bubble = row.querySelector('.msg-bubble[data-original]');
   if (bubble) {
-    bubble.addEventListener('mouseenter', (e) => showTooltip(e, 'Original: ' + bubble.getAttribute('data-original')));
+    bubble.addEventListener('mouseenter', e => showTooltip(e, 'Original: ' + bubble.getAttribute('data-original')));
     bubble.addEventListener('mousemove', moveTooltip);
     bubble.addEventListener('mouseleave', hideTooltip);
   }
-
   area.scrollTop = area.scrollHeight;
 }
 
@@ -744,11 +589,10 @@ function hideEmptyState() {
   }
 }
 
-// SEND
 document.getElementById('btn-send').addEventListener('click', sendMessage);
-document.getElementById('msg-input').addEventListener('keydown', (e) => {
+document.getElementById('msg-input').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-  else if (socket && myRoomId) { socket.emit('typing', { roomId: myRoomId, userName: myName }); }
+  else if (socket && myRoomId) socket.emit('typing', { roomId: myRoomId, userName: myName });
 });
 document.getElementById('msg-input').addEventListener('input', function() {
   this.style.height = 'auto';
@@ -764,7 +608,6 @@ function sendMessage() {
   input.style.height = 'auto';
 }
 
-// COPY ROOM CODE
 document.getElementById('room-code-display').addEventListener('click', function() {
   navigator.clipboard.writeText(this.textContent).then(() => {
     const orig = this.textContent;
@@ -773,40 +616,32 @@ document.getElementById('room-code-display').addEventListener('click', function(
   });
 });
 
-// COPY INVITE LINK
 document.getElementById('btn-invite-link').addEventListener('click', function() {
-  const inviteUrl = window.location.origin + '/room/' + myRoomId;
-  navigator.clipboard.writeText(inviteUrl).then(() => {
+  const url = window.location.origin + '/room/' + myRoomId;
+  navigator.clipboard.writeText(url).then(() => {
     const orig = this.innerHTML;
     this.innerHTML = '✓ Copied!';
     setTimeout(() => { this.innerHTML = orig; }, 2500);
   });
 });
 
-// LEAVE
-document.getElementById('btn-leave').addEventListener('click', () => {
+document.getElementById('btn-leave-chat').addEventListener('click', () => {
   if (socket) socket.disconnect();
   location.reload();
 });
 
-// SIDEBAR TOGGLE
 document.getElementById('btn-toggle-sidebar').addEventListener('click', () => {
   document.getElementById('sidebar').classList.toggle('open');
 });
 
-// TOOLTIP
+// Tooltip
 const tooltip = document.getElementById('tooltip');
 function showTooltip(e, text) { tooltip.textContent = text; tooltip.classList.add('show'); moveTooltip(e); }
-function moveTooltip(e) { tooltip.style.left = (e.clientX + 12) + 'px'; tooltip.style.top = (e.clientY - 32) + 'px'; }
+function moveTooltip(e) { tooltip.style.left = (e.clientX+12)+'px'; tooltip.style.top = (e.clientY-32)+'px'; }
 function hideTooltip() { tooltip.classList.remove('show'); }
 
-// UTILS
-function escHtml(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function escAttr(str) {
-  return String(str).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
+function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(str) { return String(str).replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 </script>
 </body>
 </html>

@@ -195,6 +195,14 @@
       font-size: 13px; font-weight: 600;
       padding: 3px 10px; border-radius: var(--radius-pill);
     }
+    .btn-invite {
+      display: flex; align-items: center; gap: 5px;
+      background: var(--accent-light); border: 1px solid var(--accent);
+      color: var(--accent); border-radius: var(--radius-pill);
+      padding: 4px 12px; font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-invite:hover { background: var(--accent); color: #fff; }
     .btn-leave {
       background: rgba(255,80,80,0.12); border: 1px solid rgba(255,80,80,0.3);
       color: #ff5050; border-radius: var(--radius-sm);
@@ -480,7 +488,11 @@
         </svg>
         BabelBridge
       </div>
-      <span class="room-code-pill" id="room-code-display" title="Click to copy">——</span>
+      <span class="room-code-pill" id="room-code-display" title="Click to copy room code">——</span>
+      <button class="btn-invite" id="btn-invite-link" title="Copy invite link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Invite Link
+      </button>
     </div>
     <div class="status-dot" id="status-dot"></div>
     <div class="chat-header-right">
@@ -568,6 +580,14 @@ function updateThemeIcons() {
 }
 updateThemeIcons();
 document.getElementById('theme-toggle-landing').addEventListener('click', toggleTheme);
+
+// Auto-fill room code from URL (shareable link support)
+const urlParams = new URLSearchParams(window.location.search);
+const urlRoom = urlParams.get('room');
+if (urlRoom) {
+  document.getElementById('input-room').value = urlRoom.toUpperCase();
+  document.getElementById('input-name').focus();
+}
 document.getElementById('theme-toggle-chat').addEventListener('click', toggleTheme);
 
 // Auto-uppercase room input
@@ -750,6 +770,16 @@ document.getElementById('room-code-display').addEventListener('click', function(
     const orig = this.textContent;
     this.textContent = 'Copied!';
     setTimeout(() => { this.textContent = orig; }, 2000);
+  });
+});
+
+// COPY INVITE LINK
+document.getElementById('btn-invite-link').addEventListener('click', function() {
+  const inviteUrl = window.location.origin + '/room/' + myRoomId;
+  navigator.clipboard.writeText(inviteUrl).then(() => {
+    const orig = this.innerHTML;
+    this.innerHTML = '✓ Copied!';
+    setTimeout(() => { this.innerHTML = orig; }, 2500);
   });
 });
 

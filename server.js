@@ -15,6 +15,12 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Shareable room link — redirect /room/ROOMCODE to /?room=ROOMCODE
+app.get('/room/:roomId', (req, res) => {
+  const roomId = req.params.roomId.toUpperCase();
+  res.redirect(`/?room=${roomId}`);
+});
+
 // In-memory room storage
 const rooms = new Map();
 
